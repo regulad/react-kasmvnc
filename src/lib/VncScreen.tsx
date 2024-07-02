@@ -6,16 +6,46 @@ import React, {
     useState,
 } from 'react';
 import RFB from '../noVNC/core/rfb';
+import MouseButtonMapper, {XVNC_BUTTONS} from "../noVNC/core/mousebuttonmapper";
+import {supportsBinaryClipboard} from "../noVNC/core/util/browser";
 
 export interface RFBOptions {
     shared: boolean;
     credentials: {
         username?: string;
-        password?: string;
+        password?: string | null;
         target?: string;
+        hiDpi? : boolean;
     };
     repeaterID: string;
     wsProtocols: string | string[];
+}
+
+export interface KasmVNCRFBOptions {
+    dynamicQualityMin?: number;
+    dynamicQualityMax?: number;
+    jpegVideoQuality?: number;
+    webpVideoQuality?: number;
+    videoArea?: number;
+    videoTime?: number;
+    videoOutTime?: number;
+    videoScaling?: number;
+    treatLossless?: number;
+    maxVideoResolutionX?: number;
+    maxVideoResolutionY?: number;
+    frameRate?: number;
+    idleDisconnect?: boolean;
+    pointerRelative?: boolean;
+    videoQuality?: number;
+    antiAliasing?: number;
+    clipboardUp?: boolean;
+    clipboardDown?: boolean;
+    clipboardSeamless?: boolean;
+    enableIME?: boolean;
+    clipboardBinary?: boolean;
+    enableWebRTC?: boolean;
+    mouseButtonMapper?: MouseButtonMapper;
+    enableQOI?: boolean;
 }
 
 export interface Props {
@@ -24,6 +54,7 @@ export interface Props {
     className?: string;
     viewOnly?: boolean;
     rfbOptions?: Partial<RFBOptions>;
+    kasmOptions?: Partial<KasmVNCRFBOptions>;
     focusOnClick?: boolean;
     clipViewport?: boolean;
     dragViewport?: boolean;
@@ -83,6 +114,7 @@ const VncScreen: React.ForwardRefRenderFunction<VncScreenHandle, Props> = (props
     const timeouts = useRef<Array<NodeJS.Timeout>>([]);
     const eventListeners = useRef<EventListeners>({});
     const screen = useRef<HTMLDivElement>(null);
+    const keyboardInput = useRef<HTMLTextAreaElement>(null);
     const [loading, setLoading] = useState<boolean>(true);
 
     const {
@@ -91,6 +123,7 @@ const VncScreen: React.ForwardRefRenderFunction<VncScreenHandle, Props> = (props
         className,
         viewOnly,
         rfbOptions,
+        kasmOptions,
         focusOnClick,
         clipViewport,
         dragViewport,
@@ -174,8 +207,8 @@ const VncScreen: React.ForwardRefRenderFunction<VncScreenHandle, Props> = (props
             return;
         }
 
-        const password = rfbOptions?.credentials?.password ?? prompt("Password Required:");
-        rfb?.sendCredentials({ password: password });
+        // const password = rfbOptions?.credentials?.password ?? prompt("Password Required:");
+        // rfb?.sendCredentials({ password: password });
     };
 
     const _onDesktopName = (e: { detail: { name: string } }) => {
@@ -216,6 +249,80 @@ const VncScreen: React.ForwardRefRenderFunction<VncScreenHandle, Props> = (props
         }
     };
 
+    function createDefaultMouseButtonMapper(): MouseButtonMapper {
+        const mouseButtonMapper = new MouseButtonMapper();
+
+        mouseButtonMapper.set(0, XVNC_BUTTONS.LEFT_BUTTON);
+        mouseButtonMapper.set(1, XVNC_BUTTONS.MIDDLE_BUTTON);
+        mouseButtonMapper.set(2, XVNC_BUTTONS.RIGHT_BUTTON);
+        mouseButtonMapper.set(3, XVNC_BUTTONS.BACK_BUTTON);
+        mouseButtonMapper.set(4, XVNC_BUTTONS.FORWARD_BUTTON);
+
+        return mouseButtonMapper;
+    }
+
+    function createRfb(): RFB {
+        // https://github.com/kasmtech/noVNC/blob/5ba4695e6526a27b8e38ec8d55dc33b39143e68a/app/ui.js#L1416
+        const _rfb = new RFB(
+          screen.current,
+          keyboardInput.current,
+          url,
+          rfbOptions,
+          true,
+        );
+
+        // global rfb
+        _rfb.viewOnly = viewOnly ?? false;
+        _rfb.focusOnClick = focusOnClick ?? false;
+        _rfb.clipViewport = clipViewport ?? false;
+        _rfb.dragViewport = dragViewport ?? false;
+        _rfb.resizeSession = resizeSession ?? false;
+        _rfb.scaleViewport = scaleViewport ?? false;
+        _rfb.showDotCursor = showDotCursor ?? false;
+        _rfb.background = background ?? '';
+        _rfb.qualityLevel = qualityLevel ?? 6;
+        _rfb.compressionLevel = compressionLevel ?? 2;
+
+        // KasmVNC specific
+        _rfb.dynamicQualityMin = kasmOptions?.dynamicQualityMin ?? NaN;
+        _rfb.dynamicQualityMax = kasmOptions?.dynamicQualityMax ?? NaN;
+        _rfb.jpegVideoQuality = kasmOptions?.jpegVideoQuality ?? NaN;
+        _rfb.webpVideoQuality = kasmOptions?.webpVideoQuality ?? NaN;
+        _rfb.videoArea = kasmOptions?.videoArea ?? NaN;
+        _rfb.videoTime = kasmOptions?.videoTime ?? NaN;
+        _rfb.videoOutTime = kasmOptions?.videoOutTime ?? NaN;
+        _rfb.videoScaling = kasmOptions?.videoScaling ?? NaN;
+        _rfb.treatLossless = kasmOptions?.treatLossless ?? NaN;
+        _rfb.maxVideoResolutionX = kasmOptions?.maxVideoResolutionX ?? NaN;
+        _rfb.maxVideoResolutionY = kasmOptions?.maxVideoResolutionY ?? NaN;
+        _rfb.frameRate = kasmOptions?.frameRate ?? NaN;
+        // @ts-ignore -- idleDisconnect is a property
+        _rfb.idleDisconnect = kasmOptions?.idleDisconnect ?? false;
+        _rfb.pointerRelative = kasmOptions?.pointerRelative ?? false;
+        _rfb.videoQuality = kasmOptions?.videoQuality ?? NaN;
+        _rfb.antiAliasing = kasmOptions?.antiAliasing ?? NaN;
+        // @ts-ignore -- clipboardUp is a property
+        _rfb.clipboardUp = kasmOptions?.clipboardUp ?? true;
+        // @ts-ignore -- clipboardDown is a property
+        _rfb.clipboardDown = kasmOptions?.clipboardDown ?? true;
+        // @ts-ignore -- clipboardSeamless is a property
+        _rfb.clipboardSeamless = kasmOptions?.clipboardSeamless ?? true;
+        _rfb.keyboard.enableIME = kasmOptions?.enableIME ?? false;
+        // @ts-ignore -- clipboardBinary is a property
+        _rfb.clipboardBinary = supportsBinaryClipboard() && _rfb.clipboardSeamless;
+        _rfb.enableWebRTC = kasmOptions?.enableWebRTC ?? false;
+        if (kasmOptions?.mouseButtonMapper) {
+            _rfb.mouseButtonMapper = kasmOptions.mouseButtonMapper;
+        } else {
+            _rfb.mouseButtonMapper = createDefaultMouseButtonMapper();
+        }
+        if (kasmOptions?.videoQuality === 5) {
+            _rfb.enableQOI = true;
+        }
+
+        return _rfb;
+    }
+
     const connect = () => {
         try {
             if (connected && !!rfb) {
@@ -227,19 +334,7 @@ const VncScreen: React.ForwardRefRenderFunction<VncScreenHandle, Props> = (props
             }
 
             screen.current.innerHTML = '';
-
-            const _rfb = new RFB(screen.current, url, rfbOptions);
-
-            _rfb.viewOnly = viewOnly ?? false;
-            _rfb.focusOnClick = focusOnClick ?? false;
-            _rfb.clipViewport = clipViewport ?? false;
-            _rfb.dragViewport = dragViewport ?? false;
-            _rfb.resizeSession = resizeSession ?? false;
-            _rfb.scaleViewport = scaleViewport ?? false;
-            _rfb.showDotCursor = showDotCursor ?? false;
-            _rfb.background = background ?? '';
-            _rfb.qualityLevel = qualityLevel ?? 6;
-            _rfb.compressionLevel = compressionLevel ?? 2;
+            const _rfb = createRfb();
             setRfb(_rfb);
 
             eventListeners.current.connect = _onConnect;
@@ -265,7 +360,8 @@ const VncScreen: React.ForwardRefRenderFunction<VncScreenHandle, Props> = (props
 
     const sendCredentials = (credentials: RFBOptions["credentials"]) => {
         const rfb = getRfb();
-        rfb?.sendCredentials(credentials);
+        console.error("KasmVNC does not implement credential sending")
+        // rfb?.sendCredentials(credentials);
     };
 
     const sendKey = (keysym: number, code: string, down?: boolean) => {
@@ -361,12 +457,15 @@ const VncScreen: React.ForwardRefRenderFunction<VncScreenHandle, Props> = (props
     return (
         <>
             <div
-                style={style}
-                className={className}
-                ref={screen}
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
-            />
+              style={style}
+              className={className}
+              ref={screen}
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+            >
+                <textarea autoCapitalize="off"
+                          autoComplete="off" spellCheck="false" tabIndex={-1} ref={keyboardInput} />
+            </div>
             {loading && (loadingUI ?? <div className="text-white loading">Loading...</div>)}
         </>
     );

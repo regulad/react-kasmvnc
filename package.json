@@ -1,5 +1,5 @@
 {
-  "name": "react-vnc",
+  "name": "react-kasmvnc",
   "version": "2.0.2",
   "description": "A React Component to connect to a websockified VNC client using noVNC.",
   "author": "roerohan",
@@ -60,7 +60,7 @@
     "build:lib": "rollup -c",
     "lint": "eslint . --ext .ts --ext .js",
     "lint:fix": "npm run lint -- --fix",
-    "prepare": "is-ci || husky install",
+    "prepare": "npm run prepack && is-ci || husky install",
     "prepack": "npm run build:lib",
     "prepublishOnly": "cp package.json package.json.bak && node prepublish.js",
     "postpublish": "mv package.json.bak package.json",

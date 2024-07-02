@@ -7,7 +7,7 @@
     <img src="https://project-logo.png" alt="Logo" width="80">
   </a> -->
 
-  <h3 align="center">react-vnc</h3>
+  <h3 align="center">react-kasmvnc</h3>
 
   <p align="center">
     A React Component to connect to a websockified VNC client using noVNC.
@@ -20,6 +20,10 @@
     <a href="https://github.com/roerohan/react-vnc/issues">Report Bug</a>
     ·
     <a href="https://github.com/roerohan/react-vnc/issues">Request Feature</a>
+  </p>
+
+  <p align="center">
+    This version of kasm-vnc is built against KasmVNC instead of base noVNC to allow connections to KasmVNC servers. The API is near-identical, except for the no-op behavior of sendCredentials and the additional kasmOptions prop to the VncScreen
   </p>
 </p>
 
