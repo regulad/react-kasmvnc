@@ -23,7 +23,7 @@
   </p>
 
   <p align="center">
-    This version of kasm-vnc is built against KasmVNC instead of base noVNC to allow connections to KasmVNC servers. The API is near-identical, except for the no-op behavior of sendCredentials and the additional kasmOptions prop to the VncScreen
+    This version of kasm-vnc is built against KasmVNC instead of base noVNC to allow connections to KasmVNC servers. The API is near-identical, except for the no-op behavior of sendCredentials and the additional kasmOptions prop to the VncScreen. This library also supports KasmVNC's audio, which Kasm doesn't normally support outside of their own client.
   </p>
 </p>
 
