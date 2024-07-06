@@ -6,8 +6,13 @@ import React, {
     useState,
 } from 'react';
 import RFB from '../noVNC/core/rfb';
+import JSMpeg from '@cycjimmy/jsmpeg-player';
+import type {Player} from "jsmpeg"; // doesn't exist at runtime; type-only
 import MouseButtonMapper, {XVNC_BUTTONS} from "../noVNC/core/mousebuttonmapper";
 import {supportsBinaryClipboard} from "../noVNC/core/util/browser";
+
+const JSMpegVideoElement = JSMpeg.VideoElement;
+const JSMpegPlayer = JSMpeg.Player || JSMpegVideoElement.player;
 
 export interface RFBOptions {
     shared: boolean;
@@ -50,6 +55,7 @@ export interface KasmVNCRFBOptions {
 
 export interface Props {
     url: string;
+    audioUrl?: string;
     style?: object;
     className?: string;
     viewOnly?: boolean;
@@ -117,8 +123,12 @@ const VncScreen: React.ForwardRefRenderFunction<VncScreenHandle, Props> = (props
     const keyboardInput = useRef<HTMLTextAreaElement>(null);
     const [loading, setLoading] = useState<boolean>(true);
 
+    const jsmpegPlayer = useRef<Player | null>(null);
+    const audioCanvasRef = useRef<HTMLCanvasElement | null>(null);
+
     const {
         url,
+        audioUrl,
         style,
         className,
         viewOnly,
@@ -221,6 +231,11 @@ const VncScreen: React.ForwardRefRenderFunction<VncScreenHandle, Props> = (props
     };
 
     const disconnect = () => {
+        if (jsmpegPlayer.current) {
+            jsmpegPlayer.current.destroy();
+            jsmpegPlayer.current = null;
+        }
+
         const rfb = getRfb();
         try {
             if (!rfb) {
@@ -261,7 +276,33 @@ const VncScreen: React.ForwardRefRenderFunction<VncScreenHandle, Props> = (props
         return mouseButtonMapper;
     }
 
+    function initializeAudioStream() {
+        // https://github.com/phoboslab/jsmpeg?tab=readme-ov-file#streaming-via-websockets
+
+        if (!audioUrl) {
+            console.log("No audio URL provided; cannot stream audio.");
+            return;
+        }
+        if (!audioCanvasRef.current) {
+            console.log("No audio canvas ref available; cannot stream audio.");
+            return;
+        }
+        if (jsmpegPlayer.current) {
+            jsmpegPlayer.current.destroy();
+            jsmpegPlayer.current = null;
+        }
+        // we receive an MPEG-TS stream from the server
+        jsmpegPlayer.current = new JSMpegPlayer(audioUrl, {
+            canvas: audioCanvasRef.current,
+            audio: true,
+            video: false,
+        });
+        jsmpegPlayer.current.volume = 1;
+    }
+
     function createRfb(): RFB {
+        initializeAudioStream();
+
         // https://github.com/kasmtech/noVNC/blob/5ba4695e6526a27b8e38ec8d55dc33b39143e68a/app/ui.js#L1416
         const _rfb = new RFB(
           screen.current,
@@ -359,7 +400,7 @@ const VncScreen: React.ForwardRefRenderFunction<VncScreenHandle, Props> = (props
     };
 
     const sendCredentials = (credentials: RFBOptions["credentials"]) => {
-        const rfb = getRfb();
+        // const rfb = getRfb();
         console.error("KasmVNC does not implement credential sending")
         // rfb?.sendCredentials(credentials);
     };
@@ -455,19 +496,20 @@ const VncScreen: React.ForwardRefRenderFunction<VncScreenHandle, Props> = (props
     };
 
     return (
-        <>
-            <div
-              style={style}
-              className={className}
-              ref={screen}
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
-            >
+      <>
+          <div
+            style={style}
+            className={className}
+            ref={screen}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          >
                 <textarea autoCapitalize="off"
-                          autoComplete="off" spellCheck="false" tabIndex={-1} ref={keyboardInput} />
-            </div>
-            {loading && (loadingUI ?? <div className="text-white loading">Loading...</div>)}
-        </>
+                          autoComplete="off" spellCheck="false" tabIndex={-1} ref={keyboardInput}/>
+          </div>
+          <canvas style={{width: 0, height: 0}} ref={audioCanvasRef}/>
+          {loading && (loadingUI ?? <div className="text-white loading">Loading...</div>)}
+      </>
     );
 }
 

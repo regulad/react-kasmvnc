@@ -4,7 +4,9 @@ import { VncScreen } from './lib';
 
 function App() {
   const [vncUrl, setVncUrl] = useState('');
-  const [inputUrl, setInputUrl] = useState('');
+  const [vncInputUrl, setVncInputUrl] = useState('');
+  const [audioUrl, setAudioUrl] = useState('');
+  const [audioInputUrl, setAudioInputUrl] = useState('');
   const vncScreenRef = useRef<React.ElementRef<typeof VncScreen>>(null);
 
   const isValid = (vncUrl: string) => {
@@ -24,11 +26,23 @@ function App() {
         <Spacer />
 
         <input type="text" onChange={({ target: { value } }) => {
-          setInputUrl(value);
+          setVncInputUrl(value);
         }} name="url" placeholder="wss://your-vnc-url" />
 
         <Spacer />
-        <button onClick={() => setVncUrl(inputUrl)}>Go!</button>
+        <button onClick={() => setVncUrl(vncInputUrl)}>Go!</button>
+      </div>
+
+      <div style={{ margin: '1rem' }}>
+        <label htmlFor="url">URL for Audio Stream</label>
+        <Spacer />
+
+        <input type="text" onChange={({ target: { value } }) => {
+          setAudioInputUrl(value);
+        }} name="url" placeholder="ws://your-audio-url" />
+
+        <Spacer />
+        <button onClick={() => setAudioUrl(audioInputUrl)}>Go!</button>
       </div>
 
       <div style={{ opacity: 0.5, margin: '1rem' }}>
@@ -59,6 +73,7 @@ function App() {
             (
               <VncScreen
                 url={vncUrl}
+                audioUrl={audioUrl || undefined}
                 scaleViewport
                 background="#000000"
                 style={{

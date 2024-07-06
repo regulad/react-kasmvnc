@@ -1,6 +1,6 @@
 {
   "name": "react-kasmvnc",
-  "version": "2.0.2",
+  "version": "2.1.0",
   "description": "A React Component to connect to a websockified VNC client using noVNC.",
   "author": "roerohan",
   "license": "MIT",
@@ -36,6 +36,7 @@
     "url": "https://github.com/roerohan/react-vnc/issues"
   },
   "dependencies": {
+    "@cycjimmy/jsmpeg-player": "^6.0.5",
     "@rollup/plugin-typescript": "^11.1.6",
     "@testing-library/jest-dom": "^6.4.5",
     "@testing-library/react": "^16.0.0",
