@@ -111,6 +111,7 @@ export type VncScreenHandle = {
     machineReset: () => void;
     clipboardPaste: (text: string) => void;
     rfb: RFB | null;
+    jsmpegPlayer: Player | null;
     eventListeners: EventListeners;
 };
 
@@ -459,6 +460,7 @@ const VncScreen: React.ForwardRefRenderFunction<VncScreenHandle, Props> = (props
         machineReset,
         clipboardPaste,
         rfb: rfb.current,
+        jsmpegPlayer: jsmpegPlayer.current,
         eventListeners: eventListeners.current,
     }));
 
