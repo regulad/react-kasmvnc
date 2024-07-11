@@ -232,10 +232,14 @@ const VncScreen: React.ForwardRefRenderFunction<VncScreenHandle, Props> = (props
     };
 
     const disconnect = () => {
-        if (jsmpegPlayer.current) {
-            jsmpegPlayer.current.destroy();
-            jsmpegPlayer.current = null;
+        try {
+            if (jsmpegPlayer.current) {
+                jsmpegPlayer.current.destroy();
+            }
+        } catch (err) {
+            logger.error(err);
         }
+        jsmpegPlayer.current = null;
 
         const rfb = getRfb();
         try {
